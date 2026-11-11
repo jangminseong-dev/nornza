@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import GlobalNavigation from "@/components/shared/GlobalNavigation";
 import type { AnalysisSelection } from "@/types/analysis";
 import { selectionCenter } from "@/lib/demo";
@@ -17,6 +17,7 @@ interface AnalysisWorkspaceProps {
   initialSelection?: AnalysisSelection | null;
   onContinue?: (selection: AnalysisSelection) => void;
   onDemoStart?: () => void;
+  onSelectionChange?: (selection: AnalysisSelection | null) => void;
 }
 
 const numberFormatter = new Intl.NumberFormat("ko-KR");
@@ -34,7 +35,7 @@ function StatisticRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function AnalysisWorkspace({ preview = false, hideNavigation = false, initialSelection, onContinue, onDemoStart }: AnalysisWorkspaceProps) {
+export default function AnalysisWorkspace({ preview = false, hideNavigation = false, initialSelection, onContinue, onDemoStart, onSelectionChange }: AnalysisWorkspaceProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([...(initialSelection?.gridIds ?? [])]);
   const [region, setRegion] = useState<MapRegion | null>(null);
   const [selectionRegion, setSelectionRegion] = useState<MapRegion | null>(initialSelection?.address ? { name: initialSelection.address.replace(/ 인근$/, ""), breadcrumbs: [...initialSelection.breadcrumbs] } : null);
@@ -46,6 +47,10 @@ export default function AnalysisWorkspace({ preview = false, hideNavigation = fa
   } : null), [selectedIds, selectionRegion]);
   const statistics = selection?.statistics;
   const breadcrumbs = region?.breadcrumbs.length ? region.breadcrumbs : ["—", "—", "—"];
+
+  useEffect(() => {
+    onSelectionChange?.(selection);
+  }, [selection, onSelectionChange]);
 
   const toggleCell = useCallback((id: string) => {
     setSelectedIds((previous) => previous.includes(id)

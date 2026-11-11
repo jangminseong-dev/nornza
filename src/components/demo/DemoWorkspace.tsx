@@ -9,9 +9,12 @@ import ConditionsView from "./ConditionsView";
 import ProgressView from "./ProgressView";
 import ResultView from "./ResultView";
 import HistoryPanel from "./HistoryPanel";
+import AnalysisRequestDebug from "@/components/debug/AnalysisRequestDebug";
+import { createAnalysisGridRequest } from "@/lib/analysis-request";
 import { DEFAULT_SETTINGS, createDemoReport, createGridCandidates, demoProgress, exampleHistory, exampleSelection, selectionCenter } from "@/lib/demo";
 import { getCellById } from "@/lib/grid";
 import type { AnalysisSelection } from "@/types/analysis";
+import type { AnalysisGridRequest } from "@/types/analysis-request";
 import type { DemoReport, DemoSettings, DemoStep } from "@/types/demo";
 import type { MapAnnotation, MapRegion, MapTarget } from "@/types/map";
 import styles from "./DemoWorkspace.module.css";
@@ -42,6 +45,8 @@ function restoreReport(value: unknown): DemoReport | null {
 export default function DemoWorkspace() {
   const [step, setStep] = useState<DemoStep>("select");
   const [selection, setSelection] = useState<AnalysisSelection | null>(null);
+  const [draftSelection, setDraftSelection] = useState<AnalysisSelection | null>(null);
+  const [lastGridRequest, setLastGridRequest] = useState<AnalysisGridRequest | null>(null);
   const candidates = useMemo(() => selection ? createGridCandidates(selection) : [], [selection]);
   const [settings, setSettings] = useState<DemoSettings>(() => structuredClone(DEFAULT_SETTINGS));
   const [reports, setReports] = useState<DemoReport[]>(exampleHistory);
@@ -59,6 +64,8 @@ export default function DemoWorkspace() {
   const activeReport = reports.find(report => report.id === activeReportId) ?? reports[0];
   const currentReport = activeReport;
   const progress = currentReport.status === "completed" ? 100 : demoProgress(currentReport.createdAt, now);
+  const debugSelection = step === "select" ? draftSelection : step === "candidates" || step === "conditions" ? selection : activeReport.selection;
+  const gridRequestPreview = useMemo(() => createAnalysisGridRequest(debugSelection), [debugSelection]);
 
   useEffect(() => {
     let restoredSelection = false;
@@ -150,6 +157,9 @@ export default function DemoWorkspace() {
   }
   function submitAnalysis() {
     if (!selection || !candidates.length) return;
+    // This is the coordinate body to pass to the analysis API once its endpoint is available.
+    // Keep the demo request snapshot independent of subsequent selection changes.
+    setLastGridRequest(createAnalysisGridRequest(selection));
     const report = createDemoReport(selection, candidates, settings);
     setReports(previous => [report, ...previous].slice(0, 20));
     setActiveReportId(report.id); setStartedReportId(report.id); setNow(Date.now()); navigate("progress", report.id);
@@ -185,7 +195,7 @@ export default function DemoWorkspace() {
       onAnalysis={() => navigate("select")}
       onReport={() => openResult(reports.find(report => report.status === "completed") ?? activeReport)}
       onHistory={() => openHistory()} />
-    {step === "select" && <AnalysisWorkspace key={hydrated ? "ready" : "initial"} hideNavigation initialSelection={selection} onContinue={startCandidates} onDemoStart={() => startCandidates(exampleSelection())} />}
+    {step === "select" && <AnalysisWorkspace key={hydrated ? "ready" : "initial"} hideNavigation initialSelection={selection} onContinue={startCandidates} onDemoStart={() => startCandidates(exampleSelection())} onSelectionChange={setDraftSelection} />}
     {step === "conditions" && selection && <ConditionsView selection={selection} candidates={candidates} settings={settings} onChange={setSettings} onBack={() => navigate("candidates")} onSubmit={submitAnalysis} />}
     {step === "progress" && <ProgressView report={currentReport} progress={progress} onOpenResult={() => openResult(currentReport)} onOpenMap={() => openHistory(currentReport)} />}
     {step === "result" && (activeReport.status === "completed" ? <ResultView report={activeReport} onMap={() => openHistory(activeReport)} onHistory={() => openHistory(activeReport)} initialAction={resultAction} onActionHandled={clearResultAction} /> : <ProgressView report={activeReport} progress={progress} onOpenResult={() => openResult(activeReport)} onOpenMap={() => openHistory(activeReport)} />)}
@@ -206,6 +216,7 @@ export default function DemoWorkspace() {
         <div className={styles.legend}>{step === "candidates" ? <><span className={styles.gold}>▣ 선택한 후보</span><span>□ 후보 그리드</span><span>100m × 100m</span></> : <><span className={styles.gold}>● 선택 영역</span><span className={styles.green}>● 분석 완료</span><span>○ 분석 중</span><span>◌ 후보 지역</span></>}</div>
       </section>
     </>}
+    <AnalysisRequestDebug preview={gridRequestPreview} lastRequest={lastGridRequest} activeLabel={step === "candidates" ? candidates.find(candidate => candidate.id === focusedCandidateId)?.label : null} />
     {notice && <div className={styles.toast} role="status" data-no-print>{notice}<button onClick={() => setNotice("")} aria-label="안내 닫기">×</button></div>}
   </div>;
 }
