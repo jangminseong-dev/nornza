@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import type { DemoReport } from "@/types/demo";
+import type { DemoCandidate, DemoReport } from "@/types/demo";
 import styles from "./HistoryPanel.module.css";
 
 interface HistoryPanelProps {
   reports: DemoReport[];
   activeReport: DemoReport;
+  activeCandidate: DemoCandidate | null;
+  onSelectCandidate: (id: string) => void;
   onSelectReport: (id: string) => void;
   onViewReport: () => void;
   onDownload: () => void;
@@ -25,7 +27,7 @@ function formatDate(value: string) {
 }
 
 export default function HistoryPanel({
-  reports, activeReport, onSelectReport, onViewReport, onDownload, onEmail, onNewAnalysis,
+  reports, activeReport, activeCandidate, onSelectCandidate, onSelectReport, onViewReport, onDownload, onEmail, onNewAnalysis,
 }: HistoryPanelProps) {
   const [filter, setFilter] = useState<DemoReport["status"] | null>(null);
   const completed = activeReport.status === "completed";
@@ -36,7 +38,7 @@ export default function HistoryPanel({
       <div className={styles.scroll}>
         <p className={styles.eyebrow}>노른자 / 팀 워크스페이스</p>
         <h1 className={styles.heading} id="history-title">우리 팀의 분석 지도</h1>
-        <p className={styles.description}>분석한 지역과 리포트를 한눈에 확인해요.</p>
+        <p className={styles.description}>그리드별 점수와 분석 리포트를 확인해요.</p>
         <hr className={`${styles.divider} ${styles.headerDivider}`} />
 
         <section aria-labelledby="active-report-title">
@@ -44,8 +46,17 @@ export default function HistoryPanel({
           <span className={`${styles.status} ${activeReport.status === "processing" ? styles.statusProcessing : activeReport.status === "candidate" ? styles.statusCandidate : ""}`}>
             {statusLabels[activeReport.status]}
           </span>
-          <p className={styles.scoreLabel}>입점 적합도</p>
-          <p className={styles.score}>{completed ? activeReport.score : "—"} / 100</p>
+          <p className={styles.scoreLabel}>{activeCandidate ? `후보 그리드 ${activeCandidate.label} · 입점 적합도` : "그리드를 선택해주세요"}</p>
+          <p className={styles.score}>{completed && activeCandidate ? activeCandidate.score : "—"} / 100</p>
+          <div className={styles.gridScores} role="group" aria-label="그리드별 분석 점수">
+            {activeReport.candidates.map((candidate) => (
+              <button type="button" key={candidate.id} aria-pressed={candidate.id === activeCandidate?.id}
+                aria-label={`후보 그리드 ${candidate.label}, ${completed ? `${candidate.score}점` : statusLabels[activeReport.status]}, 지도에서 보기`}
+                onClick={() => onSelectCandidate(candidate.id)}>
+                <span>{candidate.label}</span><strong>{completed ? `${candidate.score}점` : "—"}</strong>
+              </button>
+            ))}
+          </div>
           <hr className={`${styles.divider} ${styles.detailsDivider}`} />
           <dl>
             <div className={styles.row}><dt>후보 그리드</dt><dd>{activeReport.candidates.length}개</dd></div>
@@ -78,7 +89,7 @@ export default function HistoryPanel({
                 <li key={report.id}>
                   <button className={styles.reportItem} type="button" aria-pressed={activeReport.id === report.id} onClick={() => onSelectReport(report.id)}>
                     <span>{report.name}</span>
-                    <small>{report.status === "completed" ? `${report.score}점` : formatDate(report.createdAt)}</small>
+                    <small>그리드 {report.candidates.length}개</small>
                   </button>
                 </li>
               ))}

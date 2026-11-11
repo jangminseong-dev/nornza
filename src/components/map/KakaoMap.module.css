@@ -174,7 +174,10 @@
 .scoreMarker span{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;line-height:16px;font-weight:400;color:var(--secondary)}
 .scoreMarker.annotationActive{padding:18px 22px;border-color:#e8d874}
 .scoreMarker.annotationActive strong{font-size:28px;line-height:38px}
-.candidateMarker:focus-visible,.scoreMarker:focus-visible{outline:3px solid var(--brand-ink);outline-offset:3px}
+.gridScoreMarker{display:flex;align-items:center;justify-content:center;min-width:64px;height:32px;padding:0 8px;border:1px solid currentColor;border-radius:8px;background:white;color:var(--annotation-color);box-shadow:0 2px 8px #24271f20;white-space:nowrap;cursor:pointer}
+.gridScoreMarker strong{font-size:12px;line-height:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.gridScoreMarker.annotationActive{background:var(--brand-yellow);outline:2px solid white;outline-offset:1px}
+.candidateMarker:focus-visible,.scoreMarker:focus-visible,.gridScoreMarker:focus-visible{outline:3px solid var(--brand-ink);outline-offset:3px}
 
 @media (prefers-reduced-motion: reduce) {
   .loadingSymbol span { animation: none; }

@@ -389,6 +389,7 @@ export default function KakaoMap(props: KakaoMapProps) {
     const cleanups: (() => void)[] = [];
     (props.annotations ?? []).forEach((annotation) => {
       const isCandidate = annotation.tone === "candidate";
+      const isGridScore = annotation.variant === "grid-score";
       const color = annotation.active || annotation.tone === "selected" ? "#806000" : annotation.tone === "completed" ? "#148154" : "#ad902c";
       (annotation.gridIds ?? []).forEach((id) => {
         const cell = getCellById(id);
@@ -401,14 +402,15 @@ export default function KakaoMap(props: KakaoMapProps) {
       });
       const element = document.createElement("button");
       element.type = "button";
-      element.className = `${isCandidate ? styles.candidateMarker : styles.scoreMarker} ${annotation.active ? styles.annotationActive : ""}`;
+      element.className = `${isCandidate ? styles.candidateMarker : isGridScore ? styles.gridScoreMarker : styles.scoreMarker} ${annotation.active ? styles.annotationActive : ""}`;
       element.style.setProperty("--annotation-color", color);
       element.setAttribute("aria-label", `${annotation.label} ${annotation.description ?? ""}`.trim());
+      element.setAttribute("aria-pressed", String(!!annotation.active));
       element.title = annotation.description ?? annotation.label;
       const label = document.createElement("strong");
       label.textContent = annotation.label;
       element.append(label);
-      if (!isCandidate && annotation.description) {
+      if (!isCandidate && !isGridScore && annotation.description) {
         const caption = document.createElement("span"); caption.textContent = annotation.description; element.append(caption);
       }
       const click = (event: MouseEvent) => { event.stopPropagation(); maps.event.preventMap(); propsRef.current.onAnnotationClick?.(annotation.id); };

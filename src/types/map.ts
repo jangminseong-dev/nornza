@@ -37,6 +37,7 @@ export interface MapAnnotation {
   tone: "candidate" | "selected" | "completed" | "processing" | "prospect";
   active?: boolean;
   gridIds?: readonly string[];
+  variant?: "grid-score";
 }
 
 export interface PlaceResult extends GeoPoint {

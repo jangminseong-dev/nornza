@@ -11,6 +11,7 @@ import ResultView from "./ResultView";
 import HistoryPanel from "./HistoryPanel";
 import AnalysisRequestDebug from "@/components/debug/AnalysisRequestDebug";
 import { createAnalysisGridRequest } from "@/lib/analysis-request";
+import { createHistoryGridAnnotations } from "@/lib/history-map";
 import { DEFAULT_SETTINGS, createDemoReport, createGridCandidates, demoProgress, exampleHistory, exampleSelection, selectionCenter } from "@/lib/demo";
 import { getCellById } from "@/lib/grid";
 import type { AnalysisSelection } from "@/types/analysis";
@@ -51,6 +52,7 @@ export default function DemoWorkspace() {
   const [settings, setSettings] = useState<DemoSettings>(() => structuredClone(DEFAULT_SETTINGS));
   const [reports, setReports] = useState<DemoReport[]>(exampleHistory);
   const [activeReportId, setActiveReportId] = useState("example-0");
+  const [historyGrid, setHistoryGrid] = useState<{ reportId: string; candidateId: string } | null>(null);
   const [activeCandidateId, setActiveCandidateId] = useState<string | null>(null);
   const focusedCandidateId = candidates.some(candidate => candidate.id === activeCandidateId) ? activeCandidateId : candidates[0]?.id ?? null;
   const [startedReportId, setStartedReportId] = useState<string | null>(null);
@@ -62,6 +64,7 @@ export default function DemoWorkspace() {
   const [resultAction, setResultAction] = useState<"print" | "email" | null>(null);
   const clearResultAction = useCallback(() => setResultAction(null), []);
   const activeReport = reports.find(report => report.id === activeReportId) ?? reports[0];
+  const activeHistoryCandidate = activeReport.candidates.find(candidate => historyGrid?.reportId === activeReport.id && candidate.id === historyGrid.candidateId) ?? activeReport.candidates[0] ?? null;
   const currentReport = activeReport;
   const progress = currentReport.status === "completed" ? 100 : demoProgress(currentReport.createdAt, now);
   const debugSelection = step === "select" ? draftSelection : step === "candidates" || step === "conditions" ? selection : activeReport.selection;
@@ -81,6 +84,7 @@ export default function DemoWorkspace() {
           if (restored.length) { availableReports = restored; setReports(restored); }
         }
         if (typeof saved.activeReportId === "string") setActiveReportId(saved.activeReportId);
+        if (saved.historyGrid && typeof saved.historyGrid.reportId === "string" && typeof saved.historyGrid.candidateId === "string") setHistoryGrid(saved.historyGrid);
         if (typeof saved.startedReportId === "string") setStartedReportId(saved.startedReportId);
       }
     } catch { /* An unavailable or outdated local demo session starts cleanly. */ }
@@ -95,8 +99,8 @@ export default function DemoWorkspace() {
 
   useEffect(() => {
     if (!hydrated) return;
-    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ selection, settings, reports, activeReportId, startedReportId })); } catch { /* Demo remains usable when browser storage is unavailable. */ }
-  }, [hydrated, selection, settings, reports, activeReportId, startedReportId]);
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ selection, settings, reports, activeReportId, historyGrid, startedReportId })); } catch { /* Demo remains usable when browser storage is unavailable. */ }
+  }, [hydrated, selection, settings, reports, activeReportId, historyGrid, startedReportId]);
 
   useEffect(() => {
     const onPopState = () => {
@@ -126,9 +130,10 @@ export default function DemoWorkspace() {
     if (step === "candidates" && selection) {
       setFocusTarget(previous => ({ ...selectionCenter(selection), requestId: (previous?.requestId ?? 0) + 1, label: selection.address ?? "선택 영역", level: selection.gridIds.length <= 4 ? 2 : 3 }));
     } else if (step === "history") {
-      setFocusTarget(previous => ({ ...selectionCenter(activeReport.selection), requestId: (previous?.requestId ?? 0) + 1, label: activeReport.name, level: 4 }));
+      const cell = activeHistoryCandidate ? getCellById(activeHistoryCandidate.gridId) : null;
+      setFocusTarget(previous => ({ ...(cell?.center ?? selectionCenter(activeReport.selection)), requestId: (previous?.requestId ?? 0) + 1, label: activeReport.name, level: 2 }));
     }
-  }, [step, selection, activeReportId, hydrated]);
+  }, [step, selection, activeReportId, activeHistoryCandidate?.gridId, hydrated]);
 
   useEffect(() => {
     if (!notice) return;
@@ -165,7 +170,7 @@ export default function DemoWorkspace() {
     setActiveReportId(report.id); setStartedReportId(report.id); setNow(Date.now()); navigate("progress", report.id);
   }
   function openHistory(report = activeReport) {
-    setActiveReportId(report.id); focusSelection(report.selection, 4); navigate("history", report.id);
+    setActiveReportId(report.id); navigate("history", report.id);
   }
   function openResult(report = activeReport) {
     if (report.status !== "completed") {
@@ -175,19 +180,20 @@ export default function DemoWorkspace() {
     }
     setActiveReportId(report.id); navigate("result", report.id);
   }
-  function selectHistoryReport(id: string) {
+  function selectHistoryReport(id: string, candidateId?: string) {
     const report = reports.find(item => item.id === id);
     if (!report) return;
-    setActiveReportId(id); focusSelection(report.selection, 4);
+    const candidate = report.candidates.find(item => item.id === candidateId) ?? report.candidates[0];
+    const cell = candidate ? getCellById(candidate.gridId) : null;
+    setActiveReportId(id);
+    setHistoryGrid(candidate ? { reportId: id, candidateId: candidate.id } : null);
+    if (cell) setFocusTarget(previous => ({ ...cell.center, requestId: (previous?.requestId ?? 0) + 1, label: `후보 그리드 ${candidate.label}`, level: 2 }));
     window.history.replaceState(null, "", `/analysis?${new URLSearchParams({ step: "history", report: id })}`);
   }
+  const historyAnnotations = useMemo(() => createHistoryGridAnnotations(reports, activeReport.id, activeHistoryCandidate?.id ?? null), [reports, activeReport.id, activeHistoryCandidate?.id]);
   const annotations = useMemo<MapAnnotation[]>(() => step === "candidates" ? candidates.map(candidate => ({
     id: candidate.id, point: getCellById(candidate.gridId)!.center, label: candidate.label, description: `후보 그리드 ${candidate.label} · ${candidate.areaSquareMeters.toLocaleString("ko-KR")}㎡`, tone: "candidate", active: candidate.id === focusedCandidateId, gridIds: [candidate.gridId],
-  })) : reports.map(report => ({
-    id: report.id, point: selectionCenter(report.selection), label: report.status === "completed" ? `${report.score}${report.id === activeReportId ? " / 100" : ""}` : report.status === "processing" ? "분석 중" : "후보 지역",
-    description: `${report.name} · ${report.status === "completed" ? "분석 완료" : report.status === "processing" ? "분석 중" : "후보 지역"}`,
-    tone: report.id === activeReportId ? "selected" : report.status === "completed" ? "completed" : report.status === "processing" ? "processing" : "prospect", active: report.id === activeReportId, gridIds: report.selection.gridIds,
-  })), [step, candidates, focusedCandidateId, reports, activeReportId]);
+  })) : historyAnnotations, [step, candidates, focusedCandidateId, historyAnnotations]);
   const mapSelection = step === "candidates" ? selection : activeReport.selection;
 
   return <div className={styles.workspace} data-print-layout>
@@ -202,21 +208,27 @@ export default function DemoWorkspace() {
     {(step === "candidates" || step === "history") && <>
       {step === "candidates" && selection ? <CandidatesPanel selection={selection} candidates={candidates} activeId={focusedCandidateId} onSelect={selectCandidate}
         onBack={() => navigate("select")} onNext={() => { if (candidates.length) navigate("conditions"); }} />
-        : <HistoryPanel reports={reports} activeReport={activeReport} onSelectReport={selectHistoryReport} onViewReport={() => openResult()}
+        : <HistoryPanel reports={reports} activeReport={activeReport} activeCandidate={activeHistoryCandidate} onSelectCandidate={id => selectHistoryReport(activeReport.id, id)} onSelectReport={selectHistoryReport} onViewReport={() => openResult()}
           onDownload={() => { setResultAction("print"); openResult(); }}
           onEmail={() => { setResultAction("email"); openResult(); }}
           onNewAnalysis={() => { setSelection(null); navigate("select"); }} />}
       <section className={styles.map} aria-label={step === "candidates" ? "후보 그리드 지도" : "팀 분석 지도"}>
         <KakaoMap selectedIds={[]} onToggleCell={noop} onRegionChange={setRegion} focusTarget={focusTarget} selectionEnabled={false} annotations={annotations}
-          onAnnotationClick={id => { if (step === "candidates") selectCandidate(id); else selectHistoryReport(id); }} />
+          onAnnotationClick={id => {
+            if (step === "candidates") selectCandidate(id);
+            else {
+              const annotation = historyAnnotations.find(item => item.id === id);
+              if (annotation) selectHistoryReport(annotation.reportId, annotation.candidateId);
+            }
+          }} />
         <div className={styles.breadcrumb}><span>{(region?.breadcrumbs ?? mapSelection?.breadcrumbs ?? ["대전광역시", "서구", "둔산동"]).join("  /  ")}</span><small>{step === "candidates" ? "선택 영역" : "분석 지도"}</small></div>
         <div className={styles.north}>N ↑</div>
-        <div className={styles.guidance}><strong>{step === "candidates" ? `후보 그리드 ${candidates.length}개를 비교해요` : "분석 결과를 지도에 모았어요"}</strong><p>{step === "candidates" ? "그리드 하나가 후보 하나예요. 셀을 눌러 비교할 영역을 확인해주세요." : "지역을 선택하면 점수와 리포트를 다시 볼 수 있어요."}</p></div>
+        <div className={styles.guidance}><strong>{step === "candidates" ? `후보 그리드 ${candidates.length}개를 비교해요` : "그리드별 분석 점수를 확인해요"}</strong><p>{step === "candidates" ? "그리드 하나가 후보 하나예요. 셀을 눌러 비교할 영역을 확인해주세요." : "A·B·C 그리드를 누르면 해당 그리드의 점수와 리포트를 볼 수 있어요."}</p></div>
         <div className={styles.demoBadge}>DEMO · 가상 분석 데이터</div>
-        <div className={styles.legend}>{step === "candidates" ? <><span className={styles.gold}>▣ 선택한 후보</span><span>□ 후보 그리드</span><span>100m × 100m</span></> : <><span className={styles.gold}>● 선택 영역</span><span className={styles.green}>● 분석 완료</span><span>○ 분석 중</span><span>◌ 후보 지역</span></>}</div>
+        <div className={styles.legend}>{step === "candidates" ? <><span className={styles.gold}>▣ 선택한 후보</span><span>□ 후보 그리드</span><span>100m × 100m</span></> : <><span className={styles.gold}>▣ 선택한 그리드</span><span className={styles.green}>● 분석 완료</span><span>○ 분석 중</span><span>◌ 후보 지역</span></>}</div>
       </section>
     </>}
-    <AnalysisRequestDebug preview={gridRequestPreview} lastRequest={lastGridRequest} activeLabel={step === "candidates" ? candidates.find(candidate => candidate.id === focusedCandidateId)?.label : null} />
+    <AnalysisRequestDebug preview={gridRequestPreview} lastRequest={lastGridRequest} activeLabel={step === "candidates" ? candidates.find(candidate => candidate.id === focusedCandidateId)?.label : step === "history" ? activeHistoryCandidate?.label : null} />
     {notice && <div className={styles.toast} role="status" data-no-print>{notice}<button onClick={() => setNotice("")} aria-label="안내 닫기">×</button></div>}
   </div>;
 }
