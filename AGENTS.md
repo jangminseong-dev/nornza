@@ -1,3 +1,8 @@
+## Git workflow
+
+- After completing an update and its relevant checks, commit the changes made for that task automatically. Keep unrelated user changes out of the commit.
+- Push to GitHub only when the user explicitly requests a push. Permission for an earlier push does not authorize future pushes.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
