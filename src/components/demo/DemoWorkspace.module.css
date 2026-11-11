@@ -1,0 +1,16 @@
+.workspace{display:flex;width:100%;min-width:1024px;height:100vh;height:100dvh;min-height:540px;overflow:hidden;background:var(--background);color:var(--text)}
+.map{position:relative;min-width:0;flex:1;overflow:hidden;background:var(--map)}
+.breadcrumb,.guidance,.legend,.north,.demoBadge{position:absolute;z-index:3;background:white;box-shadow:0 4px 16px #24291a14;border-radius:12px}
+.breadcrumb{left:24px;top:24px;display:flex;align-items:center;gap:24px;padding:12px 16px;min-height:48px;max-width:calc(100% - 120px);width:468px;font-size:14px}
+.breadcrumb>span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.breadcrumb small{color:var(--brand-ink);white-space:nowrap;font-size:12px}
+.guidance{left:24px;top:90px;width:500px;max-width:calc(100% - 48px);padding:14px 18px;border:1px solid var(--border)}
+.guidance strong{font-size:14px;line-height:22px}
+.guidance p{margin-top:4px;font-size:12px;line-height:18px;color:var(--secondary)}
+.north{right:24px;top:24px;width:40px;height:40px;display:grid;place-items:center;font-size:12px;color:var(--secondary);border-radius:8px}
+.demoBadge{top:186px;left:24px;padding:6px 10px;color:var(--brand-ink);font-size:10px;line-height:16px;box-shadow:none;background:#fff8cc}
+.legend{left:24px;bottom:42px;display:flex;gap:16px;align-items:center;padding:12px 14px;font-size:11px;line-height:18px;color:var(--secondary)}
+.gold{color:var(--brand-ink)}.green{color:#237a51}
+.toast{position:fixed;z-index:50;left:50%;bottom:28px;transform:translateX(-50%);display:flex;align-items:center;gap:24px;max-width:700px;padding:16px 20px;border-radius:12px;background:var(--text);color:white;box-shadow:0 6px 24px #0003;font-size:13px;line-height:21px}
+.toast button{border:0;background:transparent;color:white;font-size:22px}
+@media print{.workspace{height:auto;min-width:0;min-height:0;overflow:visible}.map,.toast{display:none}}

@@ -1,0 +1,40 @@
+.panel { position: relative; z-index: 2; display: flex; width: 336px; flex: 0 0 336px; min-height: 0; flex-direction: column; background: var(--surface); box-shadow: inset -1px 0 var(--border); }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 24px; scrollbar-width: thin; scrollbar-color: #d8dbcf transparent; }
+.eyebrow { color: var(--brand-ink); font-size: 12px; font-weight: 500; line-height: 18px; }
+.heading { margin-top: 12px; font-size: 22px; font-weight: 700; line-height: 33px; letter-spacing: -0.35px; }
+.description { margin-top: 8px; color: var(--secondary); font-size: 12px; line-height: 18px; }
+.divider { height: 1px; border: 0; background: var(--border); }
+.headerDivider { margin: 24px 0; }
+.areaName { font-size: 16px; font-weight: 700; line-height: 24px; }
+.status { display: inline-flex; height: 28px; min-width: 94px; align-items: center; justify-content: center; margin-top: 12px; padding: 0 16px; border-radius: 14px; background: var(--success-subtle, #e6f3e9); color: var(--success, #237a51); font-size: 12px; font-weight: 400; line-height: 18px; }
+.statusProcessing { background: var(--brand-subtle, #fff8cc); color: var(--brand-ink); }
+.statusCandidate { background: var(--background); color: var(--secondary); }
+.scoreLabel { margin-top: 32px; color: var(--secondary); font-size: 14px; line-height: 22px; }
+.score { margin-top: 4px; color: var(--brand-ink); font-size: 32px; font-weight: 700; line-height: 44px; }
+.detailsDivider { margin: 24px 0 16px; }
+.row { display: flex; height: 34px; align-items: center; justify-content: space-between; font-size: 14px; line-height: 22px; }
+.row dt { color: var(--secondary); }
+.row dd { font-weight: 500; }
+.summaryDivider { margin: 16px 0 24px; }
+.sectionHeading { font-size: 16px; font-weight: 700; line-height: 24px; }
+.summary { margin-top: 12px; }
+.filter { display: flex; width: 100%; height: 34px; align-items: center; justify-content: space-between; padding: 0; border: 0; border-radius: 5px; background: transparent; color: var(--secondary); font-size: 14px; line-height: 22px; text-align: left; }
+.filter strong { color: var(--text); font-weight: 500; }
+.filter:hover, .filter[aria-pressed="true"] { background: var(--background); box-shadow: 6px 0 var(--background), -6px 0 var(--background); }
+.help { margin-top: 16px; color: var(--secondary); font-size: 12px; line-height: 18px; }
+.newAnalysis { margin-top: 16px; padding: 0; border: 0; background: transparent; color: var(--secondary); font-size: 12px; line-height: 20px; }
+.newAnalysis:hover { color: var(--brand-ink); }
+.reportList { display: flex; flex-direction: column; gap: 6px; margin: 12px 0 0; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--background); list-style: none; }
+.reportItem { display: flex; width: 100%; min-height: 36px; align-items: center; justify-content: space-between; gap: 8px; padding: 5px; border: 0; border-radius: 5px; background: transparent; color: var(--text); text-align: left; font-size: 12px; line-height: 18px; }
+.reportItem span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reportItem small { flex-shrink: 0; color: var(--secondary); font-size: 11px; }
+.reportItem:hover, .reportItem[aria-pressed="true"] { background: var(--surface); }
+.empty { padding: 8px; color: var(--muted); font-size: 12px; line-height: 18px; }
+.footer { display: flex; height: 160px; flex: 0 0 160px; flex-direction: column; gap: 12px; padding: 24px; border-top: 1px solid var(--border); background: var(--surface); }
+.primary { display: flex; width: 100%; height: 48px; flex: 0 0 48px; align-items: center; justify-content: center; border: 0; border-radius: 12px; background: var(--brand-yellow); color: var(--text); font-size: 14px; font-weight: 500; line-height: 22px; }
+.primary:hover:not(:disabled) { background: #eed51b; }
+.primary:disabled { background: var(--border); color: var(--muted); }
+.exports { display: flex; gap: 8px; }
+.exports button { height: 40px; flex: 1; padding: 0; border: 0; border-radius: 10px; background: transparent; color: var(--secondary); font-size: 14px; font-weight: 500; line-height: 22px; }
+.exports button:hover:not(:disabled) { background: var(--background); }
+.exports button:disabled { color: var(--muted); }

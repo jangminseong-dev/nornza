@@ -1,0 +1,45 @@
+.main { flex: 1; min-width: 0; min-height: 0; overflow: auto; background: var(--background); color: var(--text); }
+.topbar { display: flex; height: 72px; align-items: center; justify-content: space-between; gap: 24px; padding: 0 24px; border-bottom: 1px solid var(--border); background: var(--surface); color: var(--secondary); font-size: 12px; line-height: 18px; }
+.topbar > p { display: flex; align-items: center; gap: 16px; white-space: nowrap; }
+.topbar .workspaceLabel { gap: 12px; }
+.demoBadge { padding: 2px 8px; border-radius: 5px; background: #fff8cc; color: var(--brand-ink); font-size: 10px; line-height: 18px; }
+.content { width: 1000px; max-width: calc(100% - 64px); margin: 40px auto 32px; }
+.heading { min-height: 80px; }
+.heading h1 { font-size: 28px; font-weight: 700; line-height: 42px; }
+.heading p { margin-top: 8px; color: var(--muted); font-size: 14px; line-height: 22px; }
+
+.statusBadge { display: inline-flex; min-width: 94px; height: 28px; align-items: center; justify-content: center; margin-top: 24px; padding: 5px 12px; border-radius: 14px; background: #fff8cc; color: var(--brand-ink); font-size: 12px; line-height: 18px; }
+.completedBadge { background: #e8f2e7; color: #237a51; }
+
+.stages { display: flex; min-height: 96px; align-items: start; justify-content: space-between; margin: 72px 0 0; padding: 0; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); list-style: none; }
+.stage { display: flex; width: 176px; min-width: 0; min-height: 84px; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+.stageNumber { display: flex; min-height: 24px; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; line-height: 24px; }
+.stageLabel { font-size: 12px; line-height: 18px; white-space: nowrap; }
+.stageDone .stageNumber,
+.stageCurrent .stageNumber { color: var(--brand-ink); }
+.stagePending { color: var(--muted); }
+.check { font-size: 16px; }
+
+.progress { margin-top: 24px; }
+.track { height: 10px; overflow: hidden; border-radius: 5px; background: var(--border); }
+.progressFill { height: 100%; border-radius: inherit; background: var(--brand-yellow); transition: width 600ms ease; }
+.progressCaption { display: flex; min-height: 20px; align-items: flex-start; justify-content: space-between; margin-top: 12px; color: var(--secondary); font-size: 12px; line-height: 18px; }
+.progressCaption > span:last-child { color: var(--brand-ink); font-variant-numeric: tabular-nums; }
+
+.currentStatus { display: flex; min-height: 148px; flex-direction: column; gap: 12px; margin-top: 54px; padding: 24px; border-radius: 16px; background: #fff8cc; }
+.currentStatus h2 { color: var(--brand-ink); font-size: 16px; font-weight: 700; line-height: 24px; }
+.currentStatus p { color: var(--secondary); font-size: 14px; line-height: 22px; }
+.currentStatus small { margin-top: -8px; color: var(--brand-ink); font-size: 10px; line-height: 16px; }
+
+.metadata { display: flex; min-height: 92px; gap: 48px; margin-top: 24px; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.metadata > div { display: flex; min-width: 0; min-height: 58px; flex: 0 1 196px; flex-direction: column; gap: 8px; }
+.metadata dt { color: var(--secondary); font-size: 12px; line-height: 18px; }
+.metadata dd { font-size: 14px; font-weight: 500; line-height: 22px; font-variant-numeric: tabular-nums; }
+
+.actions { display: flex; min-height: 48px; justify-content: flex-end; margin-top: 24px; }
+.actions button { display: flex; width: 232px; min-height: 48px; align-items: center; justify-content: center; gap: 10px; padding: 12px; border: 0; border-radius: 12px; background: var(--brand-yellow); color: var(--text); font-size: 14px; font-weight: 500; line-height: 22px; }
+.actions button:hover { background: #e8d31c; }
+
+@media (prefers-reduced-motion: reduce) {
+  .progressFill { transition: none; }
+}

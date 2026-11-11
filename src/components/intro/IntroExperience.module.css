@@ -1,0 +1,116 @@
+.workspace {
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+.workspaceVisible { opacity: 1; }
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow: hidden;
+  background: #000;
+  opacity: 1;
+  transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.leaving { opacity: 0; pointer-events: none; }
+
+.stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1526px;
+  height: 900px;
+  transform: translate(-50%, -50%) scale(var(--intro-scale));
+  transform-origin: center;
+  visibility: hidden;
+}
+
+.ready { visibility: visible; }
+.background { position: absolute; inset: 0; }
+
+.symbol {
+  position: absolute;
+  left: 672.584px;
+  top: 286.035px;
+  width: 199.191px;
+  height: 199.26px;
+}
+
+.symbolPart {
+  position: absolute;
+  inset: 0;
+  mask-repeat: no-repeat;
+  mask-mode: alpha;
+  will-change: transform, opacity;
+}
+
+.leftPart {
+  mask-image: url("/assets/intro-mask-left.svg");
+  mask-position: 0.016px 0;
+  mask-size: 119.537px 199.26px;
+  animation: left-arrive 1050ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both;
+}
+
+.rightPart {
+  mask-image: url("/assets/intro-mask-right.svg");
+  mask-position: 119.521px 39.842px;
+  mask-size: 79.6699px 119.527px;
+  animation: right-arrive 1100ms cubic-bezier(0.16, 1, 0.3, 1) 250ms both;
+}
+
+.wordmark {
+  position: absolute;
+  left: 542.692px;
+  top: 589.044px;
+  animation: wordmark-arrive 900ms cubic-bezier(0.16, 1, 0.3, 1) 700ms both;
+}
+
+.skip {
+  position: absolute;
+  right: 36px;
+  bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0 10px 16px;
+  color: #aaa;
+  font-size: 12px;
+  transition: color 160ms ease;
+  animation: skip-arrive 600ms ease 1200ms both;
+}
+
+.skip:hover { color: #f4df24; }
+.skip:focus-visible {
+  outline-color: #f4df24;
+  animation: none;
+}
+.skip span { font-size: 17px; }
+
+@keyframes left-arrive {
+  from { opacity: 0; transform: translateX(-36px) rotate(-8deg); }
+  to { opacity: 1; transform: translateX(0) rotate(0); }
+}
+
+@keyframes right-arrive {
+  0% { opacity: 0; transform: translateX(62px) scale(0.86); }
+  65% { opacity: 1; transform: translateX(-4px) scale(1.01); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes wordmark-arrive {
+  from { opacity: 0; transform: translateY(22px); filter: blur(7px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes skip-arrive {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leftPart, .rightPart, .wordmark, .skip { animation: none; }
+  .workspace, .intro { transition-duration: 100ms; }
+}

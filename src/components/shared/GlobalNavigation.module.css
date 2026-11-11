@@ -1,0 +1,12 @@
+.navigation{position:relative;z-index:5;display:flex;flex:0 0 80px;flex-direction:column;align-items:center;padding:24px 12px 26px;background:var(--nav-background);color:var(--nav-secondary)}
+.brand{display:flex;width:56px;height:68px;flex:0 0 68px;flex-direction:column;gap:4px;align-items:center;justify-content:center;border-radius:12px}
+.brand strong{color:white;font-size:12px;line-height:18px;font-weight:700}
+.items{display:flex;flex-direction:column;gap:24px;margin-top:32px}
+.item{display:flex;width:56px;height:68px;flex-direction:column;align-items:center;gap:4px;border:0;padding:0;background:transparent;color:var(--nav-secondary);font-size:12px!important;font-weight:500;line-height:18px;border-radius:14px}
+.icon{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;border-radius:14px;transition:background .18s ease}
+.item:hover .icon{background:#3b4033}
+.active{color:var(--brand-yellow)}
+.active .icon,.active:hover .icon{background:var(--brand-yellow)}
+.navigation :focus-visible{outline-color:var(--brand-yellow)}
+.profile{display:grid;place-items:center;width:36px;height:36px;margin-top:auto;background:#3b4033;border-radius:50%;color:white;font-size:11px}
+@media(prefers-reduced-motion:reduce){.icon{transition:none}}
