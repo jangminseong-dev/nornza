@@ -48,7 +48,7 @@ export default function HistoryPanel({
           <p className={styles.score}>{completed ? activeReport.score : "—"} / 100</p>
           <hr className={`${styles.divider} ${styles.detailsDivider}`} />
           <dl>
-            <div className={styles.row}><dt>후보 점포</dt><dd>{activeReport.candidates.length}곳</dd></div>
+            <div className={styles.row}><dt>후보 그리드</dt><dd>{activeReport.candidates.length}개</dd></div>
             <div className={styles.row}><dt>{completed ? "분석 완료일" : "등록일"}</dt><dd>{formatDate(activeReport.createdAt)}</dd></div>
           </dl>
         </section>

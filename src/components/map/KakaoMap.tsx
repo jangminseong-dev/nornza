@@ -393,7 +393,7 @@ export default function KakaoMap(props: KakaoMapProps) {
       (annotation.gridIds ?? []).forEach((id) => {
         const cell = getCellById(id);
         if (!cell) return;
-        const polygon = new maps.Polygon({ map, path: cell.corners.map(p => new maps.LatLng(p.lat, p.lng)), strokeColor: color, strokeWeight: 1.5, strokeOpacity: 0.9, strokeStyle: annotation.tone === "processing" || annotation.tone === "prospect" ? "dash" : "solid", fillColor: annotation.active ? "#f4df24" : annotation.tone === "completed" ? "#b0e4cd" : "#f4df24", fillOpacity: annotation.tone === "prospect" ? 0.08 : 0.3, zIndex: 3 });
+        const polygon = new maps.Polygon({ map, path: cell.corners.map(p => new maps.LatLng(p.lat, p.lng)), strokeColor: color, strokeWeight: annotation.active ? 3 : 1.5, strokeOpacity: 0.9, strokeStyle: annotation.tone === "processing" || annotation.tone === "prospect" ? "dash" : "solid", fillColor: annotation.active ? "#f4df24" : annotation.tone === "completed" ? "#b0e4cd" : "#f4df24", fillOpacity: annotation.tone === "prospect" ? 0.08 : isCandidate ? annotation.active ? 0.42 : 0.14 : 0.3, zIndex: annotation.active ? 4 : 3 });
         const click = () => { maps.event.preventMap(); propsRef.current.onAnnotationClick?.(annotation.id); };
         maps.event.addListener(polygon, "click", click);
         cleanups.push(() => maps.event.removeListener(polygon, "click", click));

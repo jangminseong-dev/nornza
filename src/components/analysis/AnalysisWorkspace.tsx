@@ -143,9 +143,9 @@ export default function AnalysisWorkspace({ preview = false, hideNavigation = fa
         </div>
 
         <footer className={styles.panelFooter}>
-          <p>{selection ? `${selectedIds.length}개 그리드 선택 · 다음은 후보 등록이에요` : "분석할 영역을 먼저 선택해주세요"}</p>
+          <p>{selection ? `${selectedIds.length}개 그리드 선택 · 그리드별 후보를 비교해요` : "분석할 영역을 먼저 선택해주세요"}</p>
           <button className={styles.nextButton} type="button" disabled={!selection || !onContinue} onClick={() => { if (selection) onContinue?.(selection); }}>
-            다음: 후보 점포 등록 <span aria-hidden="true">→</span>
+            다음: 후보 그리드 비교 <span aria-hidden="true">→</span>
           </button>
         </footer>
       </aside>

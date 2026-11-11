@@ -2,17 +2,11 @@ import type { AnalysisSelection } from "./analysis";
 
 export type DemoStep = "select" | "candidates" | "conditions" | "progress" | "result" | "history";
 export type AddonId = "competitor" | "night" | "accessibility" | "candidateComparison";
-export interface CandidateInput {
-  name: string;
-  address: string;
-  floor: number;
-  areaPyeong: number;
-}
-export interface DemoCandidate extends CandidateInput {
+export interface DemoCandidate {
   id: string;
+  gridId: string;
   label: string;
-  lat: number;
-  lng: number;
+  areaSquareMeters: number;
   score: number;
 }
 export interface DemoSettings {

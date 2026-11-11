@@ -1,7 +1,7 @@
-import { getCellAtPoint, getCellById } from "./grid";
+import { getCellAtPoint, getCellById, GRID_SIZE_METERS } from "./grid";
 import { createMockSelection } from "./mock-analysis";
 import type { AnalysisSelection } from "../types/analysis";
-import type { AddonId, CandidateInput, DemoCandidate, DemoReport, DemoSettings } from "../types/demo";
+import type { AddonId, DemoCandidate, DemoReport, DemoSettings } from "../types/demo";
 
 export const ADDON_PRICES: Record<AddonId, number> = { competitor: 10_000, night: 10_000, accessibility: 10_000, candidateComparison: 20_000 };
 export const DEFAULT_SETTINGS: DemoSettings = {
@@ -24,27 +24,23 @@ export function selectionCenter(selection: AnalysisSelection) {
   return { lat: points.reduce((sum, p) => sum + p.lat, 0) / points.length, lng: points.reduce((sum, p) => sum + p.lng, 0) / points.length };
 }
 
-export function newCandidate(selection: AnalysisSelection, input: CandidateInput, index: number, id = `candidate-${Date.now()}-${index}`, occupied: readonly DemoCandidate[] = []): DemoCandidate {
-  const cells = selection.gridIds.map(getCellById).filter((cell) => cell !== null);
-  // Five distinct positions stay inside a 100m cell, including after remove/add.
-  const offsets = [[-1, -1], [-1, 1], [1, -1], [1, 1], [0, 0]];
-  const positions = Array.from({ length: 25 }, (_, offset) => {
-    const slot = index + offset;
-    const center = cells[slot % Math.max(1, cells.length)]?.center ?? selectionCenter(selection);
-    const [dy, dx] = offsets[Math.floor(slot / Math.max(1, cells.length)) % offsets.length];
-    return { lat: center.lat + dy * 0.00022, lng: center.lng + dx * 0.00028 };
-  });
-  const point = positions.find(p => occupied.every(c => Math.abs(p.lat - c.lat) + Math.abs(p.lng - c.lng) > 0.00001)) ?? positions[0];
-  return { ...input, id, label: String.fromCharCode(65 + index), ...point, score: [78, 84, 87, 80, 76][index % 5] };
+export function candidateLabel(index: number): string {
+  if (!Number.isSafeInteger(index) || index < 0) throw new RangeError("Candidate index must be a nonnegative integer.");
+  let label = "";
+  for (let value = index + 1; value > 0; value = Math.floor((value - 1) / 26)) {
+    label = String.fromCharCode(65 + (value - 1) % 26) + label;
+  }
+  return label;
 }
 
-export function exampleCandidates(selection: AnalysisSelection): DemoCandidate[] {
-  const isDunsan = /둔산/.test(selection.address ?? "");
-  return [112, 128, 141].map((number, index) => newCandidate(selection, {
-    name: isDunsan ? `둔산로 ${number}` : `후보 점포 ${String.fromCharCode(65 + index)}`,
-    address: isDunsan ? `대전 서구 둔산로 ${number}` : `${selection.address ?? "선택한 지역"} · 데모 후보 ${index + 1}`,
-    floor: 1, areaPyeong: [28, 34, 31][index],
-  }, index, `candidate-${index + 1}`));
+/** One selected cell is one candidate, ordered north-to-south and west-to-east. */
+export function createGridCandidates(selection: AnalysisSelection): DemoCandidate[] {
+  const cells = [...new Set(selection.gridIds)].map(getCellById).filter(cell => cell !== null)
+    .sort((a, b) => b.row - a.row || a.column - b.column);
+  return cells.map((cell, index) => ({
+    id: `candidate:${cell.id}`, gridId: cell.id, label: candidateLabel(index),
+    areaSquareMeters: GRID_SIZE_METERS ** 2, score: [78, 84, 87, 80, 76][index % 5],
+  }));
 }
 
 export function createDemoReport(selection: AnalysisSelection, candidates: DemoCandidate[], settings: DemoSettings, now = new Date()): DemoReport {
@@ -66,7 +62,7 @@ export function exampleHistory(): DemoReport[] {
     { name: "탄방동 후보 영역", lat: 36.3448, lng: 127.3855, score: 0, status: "candidate" as const },
   ].map((area, index) => {
     const selection = exampleSelection(area.lat, area.lng);
-    const report = createDemoReport(selection, exampleCandidates(selection), DEFAULT_SETTINGS, new Date(`2026-11-${String(10 - index).padStart(2, "0")}T09:00:00+09:00`));
+    const report = createDemoReport(selection, createGridCandidates(selection), DEFAULT_SETTINGS, new Date(`2026-11-${String(10 - index).padStart(2, "0")}T09:00:00+09:00`));
     return { ...report, id: `example-${index}`, name: area.name, score: area.score, status: area.status };
   });
 }

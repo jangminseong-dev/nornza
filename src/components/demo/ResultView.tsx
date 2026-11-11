@@ -12,6 +12,17 @@ interface ResultViewProps {
   onActionHandled?: () => void;
 }
 
+const numberFormatter = new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 1 });
+
+function gridSize(areaSquareMeters: number) {
+  const side = numberFormatter.format(Math.sqrt(areaSquareMeters));
+  return `${side}m × ${side}m`;
+}
+
+function gridArea(areaSquareMeters: number) {
+  return `${numberFormatter.format(areaSquareMeters)}㎡`;
+}
+
 function barWidth(value: number) {
   return `${Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0))}%`;
 }
@@ -51,10 +62,10 @@ export default function ResultView({ report, onMap, onHistory, initialAction, on
     "",
     ...report.metrics.map((metric) => `${metric.label}: ${metric.value}점`),
     "",
-    "후보 점포 비교",
-    ...report.candidates.map((candidate) => `${candidate.label} · ${candidate.address} · ${candidate.score}점`),
+    `후보 그리드 비교 · ${report.candidates.length}개`,
+    ...report.candidates.map((candidate) => `후보 그리드 ${candidate.label} · ${gridSize(candidate.areaSquareMeters)} · ${gridArea(candidate.areaSquareMeters)} · ${candidate.score}점`),
     "",
-    recommended ? `추천 후보 ${recommended.label} · ${recommended.address} (${recommended.score}점)` : "등록된 후보 점포가 없습니다.",
+    recommended ? `추천 후보 그리드 ${recommended.label} · ${gridSize(recommended.areaSquareMeters)} · ${gridArea(recommended.areaSquareMeters)} (${recommended.score}점)` : "선택한 후보 그리드가 없습니다.",
   ].join("\n");
 
   async function copyEmail() {
@@ -76,7 +87,7 @@ export default function ResultView({ report, onMap, onHistory, initialAction, on
       <div className={styles.content}>
         <header className={styles.heading}>
           <h1 id="result-title">{region}, 입점 가능성을 확인해요</h1>
-          <p>위성 데이터와 지역 정보를 바탕으로 후보 점포를 비교했어요.</p>
+          <p>위성 데이터와 지역 정보를 바탕으로 선택한 후보 그리드를 비교했어요.</p>
           <p className={styles.printMeta}>노른자 입지 분석 리포트 · {reportDate(report.createdAt)} · 가상 데이터 데모</p>
         </header>
 
@@ -111,46 +122,47 @@ export default function ResultView({ report, onMap, onHistory, initialAction, on
             </div>
 
             <section className={styles.candidateSection} aria-labelledby="candidate-comparison-title">
-              <h2 id="candidate-comparison-title">후보 점포 비교</h2>
-              <div className={styles.candidateComparison}>
+              <h2 id="candidate-comparison-title">후보 그리드 비교 <span className={styles.candidateCount}>{report.candidates.length}개</span></h2>
+              <div className={styles.candidateComparison} tabIndex={report.candidates.length > 3 ? 0 : undefined} role="region" aria-label="후보 그리드별 점수와 면적">
                 {report.candidates.map((candidate) => (
                   <div
                     className={`${styles.candidate} ${candidate.id === recommended?.id ? styles.recommendedCandidate : ""}`}
                     key={candidate.id}
-                    title={`${candidate.name} · ${candidate.address}`}
+                    title={`후보 그리드 ${candidate.label} · ${gridSize(candidate.areaSquareMeters)} · ${gridArea(candidate.areaSquareMeters)}`}
                   >
-                    <div className={styles.candidateScore}><span>{candidate.label}</span><strong>{candidate.score}</strong></div>
-                    <div className={styles.candidateTrack} role="meter" aria-label={`후보 ${candidate.label} 점수`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={candidate.score}>
+                    <div className={styles.candidateScore}><span>후보 그리드 {candidate.label}</span><strong>{candidate.score}</strong></div>
+                    <div className={styles.candidateTrack} role="meter" aria-label={`후보 그리드 ${candidate.label} 점수`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={candidate.score}>
                       <span style={{ width: barWidth(candidate.score) }} />
                     </div>
+                    <p className={styles.candidateArea}>{gridSize(candidate.areaSquareMeters)} · {gridArea(candidate.areaSquareMeters)}</p>
                   </div>
                 ))}
-                {report.candidates.length === 0 && <p className={styles.noCandidates}>등록된 후보 점포가 없어요.</p>}
+                {report.candidates.length === 0 && <p className={styles.noCandidates}>선택한 후보 그리드가 없어요.</p>}
               </div>
             </section>
           </div>
         </section>
 
         {recommended && (
-          <aside className={styles.insight} aria-label="추천 후보 점포">
+          <aside className={styles.insight} aria-label="추천 후보 그리드">
             <span className={styles.candidateMarker}>{recommended.label}</span>
             <div>
-              <p>추천 후보 {recommended.label} · {recommended.address}</p>
-              <p>{recommended.score}점으로 후보 {report.candidates.length}곳 중 가장 높은 점수를 받았어요.</p>
+              <p>추천 후보 그리드 {recommended.label} · {gridSize(recommended.areaSquareMeters)} · {gridArea(recommended.areaSquareMeters)}</p>
+              <p>{recommended.score}점으로 후보 그리드 {report.candidates.length}개 중 가장 높은 점수를 받았어요.</p>
             </div>
           </aside>
         )}
 
-        <section className={styles.printCandidates} aria-label="후보 점포 상세 목록">
-          <h2>후보 점포 상세</h2>
+        <section className={styles.printCandidates} aria-label="후보 그리드 상세 목록">
+          <h2>후보 그리드 상세 · {report.candidates.length}개</h2>
           <table>
-            <thead><tr><th scope="col">후보</th><th scope="col">점포명 · 주소</th><th scope="col">층 · 면적</th><th scope="col">점수</th></tr></thead>
+            <thead><tr><th scope="col">후보 그리드</th><th scope="col">크기</th><th scope="col">면적</th><th scope="col">점수</th></tr></thead>
             <tbody>
               {report.candidates.map((candidate) => (
                 <tr key={candidate.id}>
-                  <th scope="row">{candidate.label}{candidate.id === recommended?.id ? " (추천)" : ""}</th>
-                  <td>{candidate.name}<br />{candidate.address}</td>
-                  <td>{candidate.floor}층 · {candidate.areaPyeong}평</td>
+                  <th scope="row">후보 그리드 {candidate.label}{candidate.id === recommended?.id ? " (추천)" : ""}</th>
+                  <td>{gridSize(candidate.areaSquareMeters)}</td>
+                  <td>{gridArea(candidate.areaSquareMeters)}</td>
                   <td>{candidate.score}점</td>
                 </tr>
               ))}

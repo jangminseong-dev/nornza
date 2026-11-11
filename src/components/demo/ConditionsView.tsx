@@ -19,7 +19,7 @@ const ADDONS: { id: AddonId; label: string; price: number }[] = [
   { id: "competitor", label: "경쟁 브랜드 심층 분석", price: 10_000 },
   { id: "night", label: "야간 활성도 상세 분석", price: 10_000 },
   { id: "accessibility", label: "도보 접근성 상세 분석", price: 10_000 },
-  { id: "candidateComparison", label: "후보 점포별 비교 분석", price: 20_000 },
+  { id: "candidateComparison", label: "후보 그리드별 비교 분석", price: 20_000 },
 ];
 const numberFormatter = new Intl.NumberFormat("ko-KR");
 
@@ -44,7 +44,7 @@ export default function ConditionsView({ selection, candidates, settings, onChan
     <main className={styles.main} data-demo-view="conditions">
       <header className={styles.topbar}>
         <div className={styles.breadcrumb}>
-          <button type="button" onClick={onBack}>← 후보 점포</button>
+          <button type="button" onClick={onBack}>← 후보 그리드</button>
           <span aria-hidden="true">/</span>
           <span>03 분석 조건 설정</span>
         </div>
@@ -60,7 +60,7 @@ export default function ConditionsView({ selection, candidates, settings, onChan
         <section className={styles.areaSummary} aria-label="선택한 분석 영역 요약">
           <h2>{selection.address ?? "선택한 분석 영역"}</h2>
           <p>{selection.areaSquareMeters == null ? "—" : `${numberFormatter.format(selection.areaSquareMeters)}㎡`}</p>
-          <p>후보 점포 {candidates.length}개</p>
+          <p>후보 그리드 {candidates.length}개</p>
         </section>
 
         <form className={styles.columns} onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>

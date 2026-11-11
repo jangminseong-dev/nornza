@@ -2,16 +2,28 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   addonTotal,
+  candidateLabel,
   createDemoReport,
+  createGridCandidates,
   DEFAULT_SETTINGS,
   demoProgress,
-  exampleCandidates,
   exampleSelection,
-  newCandidate,
 } from "../src/lib/demo";
-import { getCellAtPoint } from "../src/lib/grid";
+import { getCellAtPoint, GRID_SIZE_METERS } from "../src/lib/grid";
 import { createMockSelection } from "../src/lib/mock-analysis";
+import type { AnalysisSelection } from "../src/types/analysis";
 import type { AddonId } from "../src/types/demo";
+
+const anchor = getCellAtPoint({ lat: 36.3518, lng: 127.3874 });
+
+function gridId(columnOffset: number, rowOffset: number) {
+  return `5179:100:${anchor.column + columnOffset}:${anchor.row + rowOffset}`;
+}
+
+function selectionWithGridIds(gridIds: readonly string[]): AnalysisSelection {
+  // Preserve duplicates, invalid entries, and input order for the candidate boundary.
+  return { ...exampleSelection(), gridIds };
+}
 
 test("add-on price totals charge each selected option once without changing the input", () => {
   const addons: AddonId[] = ["competitor", "night", "competitor", "candidateComparison", "accessibility", "candidateComparison"];
@@ -23,42 +35,83 @@ test("add-on price totals charge each selected option once without changing the 
   assert.deepEqual(addons, before);
 });
 
-test("example candidate locations remain inside the selected cells", () => {
-  const selection = exampleSelection();
-  const candidates = exampleCandidates(selection);
-  assert.equal(candidates.length, 3);
-  assert.equal(new Set(candidates.map((candidate) => candidate.id)).size, 3);
-  for (const candidate of candidates) {
-    assert.ok(selection.gridIds.includes(getCellAtPoint(candidate).id), `${candidate.label} must be inside a selected cell`);
-  }
+test("one selected grid produces exactly one area candidate without point or shop fields", () => {
+  const selection = createMockSelection([anchor.id], null)!;
+  assert.deepEqual(createGridCandidates(selection), [{
+    id: `candidate:${anchor.id}`,
+    gridId: anchor.id,
+    label: "A",
+    areaSquareMeters: GRID_SIZE_METERS ** 2,
+    score: 78,
+  }]);
 });
 
-test("one-cell selections keep all five candidate positions inside that cell", () => {
-  const cell = getCellAtPoint({ lat: 36.3518, lng: 127.3874 });
-  const selection = createMockSelection([cell.id], null)!;
-  for (let index = 0; index < 5; index += 1) {
-    const candidate = newCandidate(selection, {
-      name: `후보 ${index + 1}`, address: "대전 서구 둔산동", floor: 1, areaPyeong: 30,
-    }, index, `single-cell-${index}`);
-    assert.equal(getCellAtPoint(candidate).id, cell.id);
-  }
-  for (const candidate of exampleCandidates(selection)) {
-    assert.equal(getCellAtPoint(candidate).id, cell.id);
-  }
-});
-
-test("disconnected selected cells do not put candidates into the unselected space between them", () => {
-  const first = getCellAtPoint({ lat: 36.3518, lng: 127.3874 });
+test("disconnected selected grids stay in one-to-one correspondence with candidates", () => {
   const distant = getCellAtPoint({ lat: 36.366, lng: 127.401 });
-  const selection = createMockSelection([first.id, distant.id], null)!;
-  for (const candidate of exampleCandidates(selection)) {
-    assert.ok(selection.gridIds.includes(getCellAtPoint(candidate).id));
-  }
+  const selection = createMockSelection([anchor.id, distant.id], null)!;
+  const candidates = createGridCandidates(selection);
+
+  assert.equal(candidates.length, 2);
+  assert.deepEqual(new Set(candidates.map((candidate) => candidate.gridId)), new Set(selection.gridIds));
+  assert.deepEqual(new Set(candidates.map((candidate) => candidate.id)), new Set(selection.gridIds.map((id) => `candidate:${id}`)));
+  assert.equal(candidates.reduce((total, candidate) => total + candidate.areaSquareMeters, 0), selection.areaSquareMeters);
+});
+
+test("more than five selected grids remain available and labels continue beyond Z", () => {
+  const ids = Array.from({ length: 30 }, (_, index) => gridId(index % 6, Math.floor(index / 6)));
+  const selection = createMockSelection(ids, null)!;
+  const candidates = createGridCandidates(selection);
+
+  assert.equal(candidates.length, 30);
+  assert.equal(new Set(candidates.map((candidate) => candidate.id)).size, 30);
+  assert.equal(candidates[0].label, "A");
+  assert.equal(candidates[4].label, "E");
+  assert.equal(candidates[5].label, "F");
+  assert.equal(candidates[25].label, "Z");
+  assert.equal(candidates[26].label, "AA");
+  assert.equal(candidates[27].label, "AB");
+  assert.equal(candidates[29].label, "AD");
+  assert.ok(candidates.every((candidate) => candidate.areaSquareMeters === 10_000));
+  assert.deepEqual(candidates.slice(0, 7).map((candidate) => candidate.score), [78, 84, 87, 80, 76, 78, 84]);
+});
+
+test("candidate labels cross single, double, and triple-letter boundaries", () => {
+  const boundaries: [number, string][] = [[0, "A"], [25, "Z"], [26, "AA"], [51, "AZ"], [52, "BA"], [701, "ZZ"], [702, "AAA"]];
+  for (const [index, label] of boundaries) assert.equal(candidateLabel(index), label);
+});
+
+test("duplicates and invalid grid IDs do not create additional candidates or mutate input", () => {
+  const north = gridId(0, 1);
+  const ids = Object.freeze([anchor.id, "invalid-grid", north, anchor.id, "5179:100:0:0", "", north]);
+  const selection = selectionWithGridIds(ids);
+  const before = structuredClone(selection);
+  const candidates = createGridCandidates(selection);
+
+  assert.deepEqual(candidates.map((candidate) => candidate.gridId), [north, anchor.id]);
+  assert.deepEqual(candidates.map((candidate) => candidate.label), ["A", "B"]);
+  assert.deepEqual(selection, before);
+  assert.deepEqual(createGridCandidates(selectionWithGridIds([])), []);
+  assert.deepEqual(createGridCandidates(selectionWithGridIds(["invalid-grid", "5179:100:0:0"])), []);
+});
+
+test("labels and candidate identity follow north-to-south rows and west-to-east columns, independently of click order", () => {
+  const northWest = gridId(0, 1);
+  const northEast = gridId(1, 1);
+  const southWest = gridId(0, 0);
+  const southEast = gridId(1, 0);
+  const firstOrder = Object.freeze([southEast, northEast, southWest, northWest]);
+  const secondOrder = Object.freeze([northWest, southWest, northEast, southEast]);
+  const first = createGridCandidates(selectionWithGridIds(firstOrder));
+  const second = createGridCandidates(selectionWithGridIds(secondOrder));
+
+  assert.deepEqual(first.map((candidate) => candidate.gridId), [northWest, northEast, southWest, southEast]);
+  assert.deepEqual(first.map((candidate) => candidate.label), ["A", "B", "C", "D"]);
+  assert.deepEqual(first, second);
 });
 
 test("reports recommend the highest-scoring candidate without sorting or mutating the inputs", () => {
   const selection = exampleSelection();
-  const candidates = exampleCandidates(selection);
+  const candidates = createGridCandidates(selection);
   candidates[0].score = 72;
   candidates[1].score = 96;
   candidates[2].score = 83;
@@ -74,7 +127,7 @@ test("reports recommend the highest-scoring candidate without sorting or mutatin
   assert.deepEqual({ selection, candidates, settings }, inputSnapshot);
 
   // A saved report must be an independent snapshot even for nested data.
-  report.candidates[0].name = "report-only change";
+  report.candidates[0].label = "report-only change";
   report.settings.targetCustomers.push("보고서에서만 변경");
   report.settings.addons.length = 0;
   report.selection.statistics.residentPopulation = -1;
@@ -104,13 +157,8 @@ test("progress increases monotonically and always returns an integer percentage"
   }
 });
 
-test("adding after removing a candidate does not reuse an occupied point", () => {
-  const cell = getCellAtPoint({ lat: 36.3518, lng: 127.3874 });
-  const selection = createMockSelection([cell.id], null)!;
-  const candidates = exampleCandidates(selection).filter(candidate => candidate.label !== "B");
-  const input = { name: "새 후보", address: "선택 영역", floor: 1, areaPyeong: 30 };
-  const added = newCandidate(selection, input, candidates.length, "new-candidate", candidates);
-  assert.ok(candidates.every(candidate => candidate.lat !== added.lat || candidate.lng !== added.lng));
-  assert.equal(getCellAtPoint(added).id, cell.id);
+test("invalid timestamps and nonfinite clocks do not produce an invalid progress value", () => {
   assert.equal(demoProgress("invalid-date"), 0);
+  assert.equal(demoProgress("2026-11-12T03:00:00.000Z", Number.NaN), 0);
+  assert.equal(demoProgress("2026-11-12T03:00:00.000Z", Number.POSITIVE_INFINITY), 0);
 });
